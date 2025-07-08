@@ -7,11 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.eventsityapp.ui.EventCreateScreen
-import com.example.eventsityapp.ui.EventListScreen
-import com.example.eventsityapp.ui.LoginScreen
-import com.example.eventsityapp.ui.ProfileScreen
-import com.example.eventsityapp.ui.RegistrationScreen
+import com.example.eventsityapp.ui.*
 import com.example.eventsityapp.viewmodel.AuthViewModel
 import com.example.eventsityapp.viewmodel.EventViewModel
 
@@ -21,6 +17,7 @@ object NavRoutes {
     const val EVENT_LIST = "event_list"
     const val EVENT_CREATE = "event_create"
     const val EVENT_EDIT = "event_edit/{eventId}"
+    const val EVENT_SEARCH = "event_search/{query}"
     const val PROFILE = "profile"
 }
 
@@ -49,6 +46,16 @@ fun AppNavigation(eventViewModel: EventViewModel, authViewModel: AuthViewModel) 
                 navController,
                 eventViewModel,
                 eventId = backStackEntry.arguments?.getInt("eventId")
+            )
+        }
+        composable(
+            route = NavRoutes.EVENT_SEARCH,
+            arguments = listOf(navArgument("query") { type = NavType.StringType })
+        ) { backStackEntry ->
+            EventSearchScreen(
+                navController,
+                eventViewModel,
+                initialQuery = backStackEntry.arguments?.getString("query") ?: ""
             )
         }
         composable(NavRoutes.PROFILE) {

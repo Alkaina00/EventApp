@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.eventsityapp.NavRoutes
+import com.example.eventsityapp.data.model.EventStatus
 import com.example.eventsityapp.viewmodel.EventViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -21,6 +23,7 @@ import java.util.*
 fun EventListScreen(navController: NavController, viewModel: EventViewModel) {
     val events by viewModel.events.collectAsState()
     val eventState = viewModel.eventState
+    var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         viewModel.getEvents()
@@ -55,7 +58,23 @@ fun EventListScreen(navController: NavController, viewModel: EventViewModel) {
                 text = "События твоего города",
                 style = MaterialTheme.typography.headlineMedium
             )
-
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Поиск событий") },
+                modifier = Modifier.fillMaxWidth(),
+                trailingIcon = {
+                    IconButton(
+                        onClick = {
+                            if (searchQuery.isNotBlank()) {
+                                navController.navigate("event_search/$searchQuery")
+                            }
+                        }
+                    ) {
+                        Icon(Icons.Default.Search, contentDescription = "Поиск")
+                    }
+                }
+            )
             when (eventState) {
                 is EventViewModel.EventState.Loading -> {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -101,6 +120,17 @@ fun EventListScreen(navController: NavController, viewModel: EventViewModel) {
                                             }",
                                             style = MaterialTheme.typography.bodySmall
                                         )
+                                        Text(
+                                            text = "Статус: ${
+                                                when (event.status) {
+                                                    EventStatus.DRAFT -> "Проект"
+                                                    EventStatus.PUBLISHED -> "Размещен"
+                                                    EventStatus.CANCELLED -> "Отменен"
+                                                    EventStatus.COMPLETED -> "Прошел"
+                                                }
+                                            }",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
                                         event.description?.let {
                                             Text(
                                                 text = "Описание: $it",
@@ -138,7 +168,6 @@ fun EventListScreen(navController: NavController, viewModel: EventViewModel) {
                     }
                 }
             }
-
             Button(
                 onClick = { navController.navigate(NavRoutes.EVENT_CREATE) },
                 modifier = Modifier.fillMaxWidth()
