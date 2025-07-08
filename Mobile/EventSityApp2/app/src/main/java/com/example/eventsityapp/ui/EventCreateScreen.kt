@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.eventsityapp.NavRoutes
+import com.example.eventsityapp.data.model.EventStatus
 import com.example.eventsityapp.viewmodel.EventViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -25,6 +26,7 @@ fun EventCreateScreen(navController: NavController, viewModel: EventViewModel, e
     var description by remember { mutableStateOf(event?.description ?: "") }
     var location by remember { mutableStateOf(event?.location ?: "") }
     var city by remember { mutableStateOf(event?.city ?: "") }
+    var status by remember { mutableStateOf(event?.status ?: EventStatus.DRAFT) }
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf(event?.event_date ?: Date()) }
     val datePickerState = rememberDatePickerState(
@@ -35,7 +37,8 @@ fun EventCreateScreen(navController: NavController, viewModel: EventViewModel, e
         "Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Казань",
         "Нижний Новгород", "Челябинск", "Самара", "Омск", "Ростов-на-Дону"
     )
-    var expanded by remember { mutableStateOf(false) }
+    var expandedCity by remember { mutableStateOf(false) }
+    var expandedStatus by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -85,8 +88,8 @@ fun EventCreateScreen(navController: NavController, viewModel: EventViewModel, e
                 modifier = Modifier.fillMaxWidth()
             )
             ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
+                expanded = expandedCity,
+                onExpandedChange = { expandedCity = !expandedCity }
             ) {
                 OutlinedTextField(
                     value = city,
@@ -96,18 +99,18 @@ fun EventCreateScreen(navController: NavController, viewModel: EventViewModel, e
                         .fillMaxWidth()
                         .menuAnchor(),
                     readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCity) }
                 )
                 ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    expanded = expandedCity,
+                    onDismissRequest = { expandedCity = false }
                 ) {
                     cities.forEach { cityOption ->
                         DropdownMenuItem(
                             text = { Text(cityOption) },
                             onClick = {
                                 city = cityOption
-                                expanded = false
+                                expandedCity = false
                             }
                         )
                     }
@@ -119,6 +122,47 @@ fun EventCreateScreen(navController: NavController, viewModel: EventViewModel, e
                 label = { Text("Место") },
                 modifier = Modifier.fillMaxWidth()
             )
+            ExposedDropdownMenuBox(
+                expanded = expandedStatus,
+                onExpandedChange = { expandedStatus = !expandedStatus }
+            ) {
+                OutlinedTextField(
+                    value = when (status) {
+                        EventStatus.DRAFT -> "Проект"
+                        EventStatus.PUBLISHED -> "Размещен"
+                        EventStatus.CANCELLED -> "Отменен"
+                        EventStatus.COMPLETED -> "Прошел"
+                    },
+                    onValueChange = {},
+                    label = { Text("Статус") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStatus) }
+                )
+                ExposedDropdownMenu(
+                    expanded = expandedStatus,
+                    onDismissRequest = { expandedStatus = false }
+                ) {
+                    EventStatus.values().forEach { statusOption ->
+                        DropdownMenuItem(
+                            text = { Text(
+                                when (statusOption) {
+                                    EventStatus.DRAFT -> "Проект"
+                                    EventStatus.PUBLISHED -> "Размещен"
+                                    EventStatus.CANCELLED -> "Отменен"
+                                    EventStatus.COMPLETED -> "Прошел"
+                                }
+                            ) },
+                            onClick = {
+                                status = statusOption
+                                expandedStatus = false
+                            }
+                        )
+                    }
+                }
+            }
             OutlinedTextField(
                 value = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(selectedDate),
                 onValueChange = { },
@@ -164,10 +208,10 @@ fun EventCreateScreen(navController: NavController, viewModel: EventViewModel, e
                     if (title.isNotBlank() && location.isNotBlank() && city.isNotBlank()) {
                         if (isEditing) {
                             event?.id?.let { id ->
-                                viewModel.updateEvent(id, title, description, selectedDate, location, city)
+                                viewModel.updateEvent(id, title, description, selectedDate, location, city, status)
                             }
                         } else {
-                            viewModel.createEvent(title, description, selectedDate, location, city)
+                            viewModel.createEvent(title, description, selectedDate, location, city, status)
                         }
                     }
                 },

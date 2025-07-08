@@ -7,8 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.eventsityapp.data.api.EventApi
-import com.example.eventsityapp.data.api.EventRequest
-import com.example.eventsityapp.data.model.EventResponse
+import com.example.eventsityapp.data.model.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -19,6 +18,8 @@ class EventViewModel(private val eventApi: EventApi, private val context: Contex
         private set
     private val _events = MutableStateFlow<List<EventResponse>>(emptyList())
     val events: StateFlow<List<EventResponse>> = _events
+    private val _searchResults = MutableStateFlow<List<EventResponse>>(emptyList())
+    val searchResults: StateFlow<List<EventResponse>> = _searchResults
 
     sealed class EventState {
         object Idle : EventState()
@@ -50,7 +51,7 @@ class EventViewModel(private val eventApi: EventApi, private val context: Contex
         }
     }
 
-    fun createEvent(title: String, description: String?, date: Date, location: String, city: String) {
+    fun createEvent(title: String, description: String?, date: Date, location: String, city: String, status: EventStatus = EventStatus.DRAFT) {
         viewModelScope.launch {
             eventState = EventState.Loading
             val token = getToken() ?: run {
@@ -59,7 +60,7 @@ class EventViewModel(private val eventApi: EventApi, private val context: Contex
             }
             try {
                 val response = eventApi.createEvent(
-                    EventRequest(title, description, date, location, city),
+                    EventRequest(title, description, date, location, city, status),
                     "Bearer $token"
                 )
                 _events.value = _events.value + response
@@ -72,7 +73,7 @@ class EventViewModel(private val eventApi: EventApi, private val context: Contex
         }
     }
 
-    fun updateEvent(id: Int, title: String, description: String?, date: Date, location: String, city: String) {
+    fun updateEvent(id: Int, title: String, description: String?, date: Date, location: String, city: String, status: EventStatus) {
         viewModelScope.launch {
             eventState = EventState.Loading
             val token = getToken() ?: run {
@@ -82,7 +83,7 @@ class EventViewModel(private val eventApi: EventApi, private val context: Contex
             try {
                 val response = eventApi.updateEvent(
                     id,
-                    EventRequest(title, description, date, location, city),
+                    EventRequest(title, description, date, location, city, status),
                     "Bearer $token"
                 )
                 _events.value = _events.value.map { if (it.id == id) response else it }
@@ -110,6 +111,23 @@ class EventViewModel(private val eventApi: EventApi, private val context: Contex
                 eventState = EventState.Idle
             } catch (e: Exception) {
                 eventState = EventState.Error(e.message ?: "Не удалось удалить событие")
+            }
+        }
+    }
+
+    fun searchEvents(query: String) {
+        viewModelScope.launch {
+            eventState = EventState.Loading
+            val token = getToken() ?: run {
+                eventState = EventState.Error("Не авторизован")
+                return@launch
+            }
+            try {
+                val response = eventApi.searchEvents("Bearer $token", query)
+                _searchResults.value = response
+                eventState = EventState.Idle
+            } catch (e: Exception) {
+                eventState = EventState.Error(e.message ?: "Не удалось выполнить поиск")
             }
         }
     }

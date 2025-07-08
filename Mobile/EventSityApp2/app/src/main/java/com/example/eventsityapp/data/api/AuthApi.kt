@@ -1,7 +1,7 @@
 package com.example.eventsityapp.data.api
 
 import android.util.Log
-import com.example.eventsityapp.data.model.EventResponse
+import com.example.eventsityapp.data.model.*
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializer
 import okhttp3.MultipartBody
@@ -61,15 +61,14 @@ interface EventApi {
 
     @DELETE("/api/events/{id}")
     suspend fun deleteEvent(@Path("id") id: Int, @Header("Authorization") token: String)
-}
 
-data class EventRequest(
-    val title: String,
-    val description: String?,
-    val date: Date,
-    val location: String,
-    val city: String
-)
+    @GET("/api/events/search")
+    suspend fun searchEvents(
+        @Header("Authorization") token: String,
+        @Query("query") query: String,
+        @Query("status") status: EventStatus = EventStatus.PUBLISHED
+    ): List<EventResponse>
+}
 
 object RetrofitClient {
     private const val BASE_URL = "http://10.0.2.2:3001/"
